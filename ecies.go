@@ -30,19 +30,19 @@
 package goEncrypt
 
 import (
+	"crypto"
+	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/subtle"
 	"fmt"
 	"hash"
 	"io"
 	"math/big"
-	"crypto"
-	"crypto/sha256"
-	"crypto/aes"
-	"crypto/sha512"
 )
 
 var (
@@ -64,12 +64,12 @@ type PublicKey struct {
 	Params *ECIESParams
 }
 
-// Export an ECIES public key as an ECDSA public key.
+// ExportECDSA Export an ECIES public key as an ECDSA public key.
 func (pub *PublicKey) ExportECDSA() *ecdsa.PublicKey {
 	return &ecdsa.PublicKey{Curve: pub.Curve, X: pub.X, Y: pub.Y}
 }
 
-// Import an ECDSA public key as an ECIES public key.
+// ImportECDSAPublic Import an ECDSA public key as an ECIES public key.
 func ImportECDSAPublic(pub *ecdsa.PublicKey) *PublicKey {
 	return &PublicKey{
 		X:      pub.X,
@@ -85,19 +85,20 @@ type PrivateKey struct {
 	D *big.Int
 }
 
-// Export an ECIES private key as an ECDSA private key.
+// ExportECDSA Export an ECIES private key as an ECDSA private key.
 func (prv *PrivateKey) ExportECDSA() *ecdsa.PrivateKey {
 	pub := &prv.PublicKey
 	pubECDSA := pub.ExportECDSA()
 	return &ecdsa.PrivateKey{PublicKey: *pubECDSA, D: prv.D}
 }
 
-// Import an ECDSA private key as an ECIES private key.
+// ImportECDSA Import an ECDSA private key as an ECIES private key.
 func ImportECDSA(prv *ecdsa.PrivateKey) *PrivateKey {
 	pub := ImportECDSAPublic(&prv.PublicKey)
 	return &PrivateKey{*pub, prv.D}
 }
 
+// GenerateKey
 // Generate an elliptic curve public / private keypair. If params is nil,
 // the recommended default parameters for the key will be chosen.
 func GenerateKey(rand io.Reader, curve elliptic.Curve, params *ECIESParams) (prv *PrivateKey, err error) {
@@ -123,7 +124,7 @@ func MaxSharedKeyLength(pub *PublicKey) int {
 	return (pub.Curve.Params().BitSize + 7) / 8
 }
 
-// ECDH key agreement method used to establish secret keys for encryption.
+// GenerateShared ECDH key agreement method used to establish secret keys for encryption.
 func (prv *PrivateKey) GenerateShared(pub *PublicKey, skLen, macLen int) (sk []byte, err error) {
 	if prv.PublicKey.Curve != pub.Curve {
 		return nil, ErrInvalidCurve
@@ -372,7 +373,7 @@ func (prv *PrivateKey) Decrypt(c, s1, s2 []byte) (m []byte, err error) {
 }
 
 
-//以下为从以太坊源码/crypt/ecies/params.go中截取过来
+// ParamsFromCurve 以下为从以太坊源码/crypt/ecies/params.go中截取过来
 func ParamsFromCurve(curve elliptic.Curve) (params *ECIESParams) {
 	return paramsFromCurve[curve]
 }

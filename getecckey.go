@@ -1,64 +1,49 @@
 package goEncrypt
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
-	"os"
 	"log"
 )
 
-/*
-@Time : 2018/11/4 16:22 
-@Author : wuman
-@File : GetECCKey
-@Software: GoLand
-*/
-func init(){
-	log.SetFlags(log.Ldate|log.Lshortfile)
+func init() {
+	log.SetFlags(log.Ldate | log.Lshortfile)
 }
 
-func GetEccKey()error{
+// GetEccKey get ecc key
+func GetEccKey() (privateBuffer bytes.Buffer, publicBuffer bytes.Buffer, err error) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err!=nil{
-		return err
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 
 	x509PrivateKey, err := x509.MarshalECPrivateKey(privateKey)
-	if err!=nil{
-		return err
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 
 	block := pem.Block{
 		Type:  eccPrivateKeyPrefix,
 		Bytes: x509PrivateKey,
 	}
-	file, err := os.Create(eccPrivateFileName)
-	if err!=nil{
-		return err
+	if err = pem.Encode(&privateBuffer, &block); err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
-	defer file.Close()
-	if err=pem.Encode(file, &block);err!=nil{
-		return err
-	}
-
 	x509PublicKey, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err!=nil {
-		return err
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	publicBlock := pem.Block{
 		Type:  eccPublicKeyPrefix,
 		Bytes: x509PublicKey,
 	}
-	publicFile, err := os.Create(eccPublishFileName)
-	if err!=nil {
-		return err
+	if err = pem.Encode(&publicBuffer, &publicBlock); err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
-	defer publicFile.Close()
-	if err=pem.Encode(publicFile,&publicBlock);err!=nil{
-		return err
-	}
-	return nil
+
+	return privateBuffer, publicBuffer, nil
 }

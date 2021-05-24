@@ -1,19 +1,13 @@
 package goEncrypt
 
 import (
-	"crypto/rsa"
+	"bytes"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
-	"os"
 	"encoding/pem"
 )
 
-/*
-@Time : 2018/11/2 18:44 
-@Author : wuman
-@File : getkey
-@Software: GoLand
-*/
 /*
 	Asymmetric encryption requires the generation of a pair of keys rather than a key, so before encryption here you need to get a pair of keys, public and private, respectively
 	Generate the public and private keys all at once
@@ -25,38 +19,35 @@ import (
 		The data is encrypted and cannot be easily decrypted
 */
 
-func GetRsaKey()error{
-	privateKey, err:= rsa.GenerateKey(rand.Reader, 2048)
-	if err!=nil{
-		return err
+func GetRsaKey() (privateBuffer bytes.Buffer,publicBuffer bytes.Buffer,err error) {
+	// private
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	x509PrivateKey := x509.MarshalPKCS1PrivateKey(privateKey)
-	privateFile, err := os.Create(privateFileName)
-	if err!=nil{
-		return err
-	}
-	defer privateFile.Close()
 	privateBlock := pem.Block{
-		Type:privateKeyPrefix,
-		Bytes:x509PrivateKey,
+		Type:  privateKeyPrefix,
+		Bytes: x509PrivateKey,
 	}
 
-	if err=pem.Encode(privateFile,&privateBlock);err!=nil{
-		return err
+	if err = pem.Encode(&privateBuffer, &privateBlock); err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
+
+	// public
 	publicKey := privateKey.PublicKey
 	x509PublicKey, err := x509.MarshalPKIXPublicKey(&publicKey)
 	if err != nil {
-		panic(err)
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
-	publicFile,_ :=os.Create(publicFileName)
-	defer publicFile.Close()
 	publicBlock := pem.Block{
-		Type:publicKeyPrefix,
-		Bytes:x509PublicKey,
+		Type:  publicKeyPrefix,
+		Bytes: x509PublicKey,
 	}
-	if err=pem.Encode(publicFile,&publicBlock);err!=nil{
-		return err
+	if err = pem.Encode(&publicBuffer, &publicBlock); err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
-	return nil
+
+	return privateBuffer, publicBuffer, nil
 }

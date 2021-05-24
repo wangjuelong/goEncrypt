@@ -1,24 +1,18 @@
 package goEncrypt
 
 import (
-	"log"
-	"crypto/rand"
-	"encoding/pem"
-	"runtime"
-	"crypto/x509"
 	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
+	"log"
+	"runtime"
 )
 
-/*
-@Time : 2018/11/4 16:43 
-@Author : wuman
-@File : EccCrypt
-@Software: GoLand
-*/
 func init(){
 	log.SetFlags(log.Ldate|log.Lshortfile)
 }
-// The public key and plaintext are passed in for encryption
+// EccEncrypt The public key and plaintext are passed in for encryption
 func EccEncrypt(plainText,key []byte)( cryptText []byte,err error){
 	block, _:= pem.Decode(key)
 	defer func(){
@@ -45,7 +39,8 @@ func EccEncrypt(plainText,key []byte)( cryptText []byte,err error){
 
 
 }
-// The private key and plaintext are passed in for decryption
+
+// EccDecrypt The private key and plaintext are passed in for decryption
 func EccDecrypt(cryptText,key []byte)( msg []byte,err error){
 	block, _:= pem.Decode(key)
 	defer func(){

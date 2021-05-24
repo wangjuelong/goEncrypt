@@ -5,7 +5,7 @@ import (
 )
 
 /*
-@Time : 2018/11/1 21:16 
+@Time : 2018/11/1 21:16
 @Author : wuman
 @File : padding
 @Software: GoLand
@@ -31,7 +31,7 @@ func PKCS5UnPadding(plainText []byte)([]byte,error){
 	length := len(plainText)
 	number:= int(plainText[length-1])
 	if number>length{
-		return nil,ErrPaddingSize
+		return nil,ErrPaddingSize{}
 	}
 	return plainText[:length-number],nil
 }
